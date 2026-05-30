@@ -1,0 +1,187 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Switcher</title>
+    <style>
+        :root {
+            --bg: oklch(99% 0.002 240);
+            --surface: oklch(100% 0 0);
+            --fg: oklch(18% 0.012 250);
+            --muted: oklch(54% 0.012 250);
+            --border: oklch(92% 0.005 250);
+            --accent: oklch(58% 0.18 255);
+            
+            --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+            --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            transition: background-color 0.5s ease;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .button {
+            background-color: var(--fg);
+            color: var(--surface);
+            border: none;
+            border-radius: 8px;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-family: var(--font-body);
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+
+        .button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background-color: var(--surface);
+            padding: 12px 20px;
+            border-radius: 99px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .color-info:hover {
+            background-color: var(--surface);
+            border-color: var(--muted);
+        }
+
+        .color-value {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 14px;
+            color: var(--fg);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .copy-icon {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: var(--muted);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.2s ease;
+        }
+        
+        .color-info:hover .copy-icon {
+            stroke: var(--fg);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background-color: var(--fg);
+            color: var(--surface);
+            padding: 12px 24px;
+            border-radius: 99px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="button" id="switch-btn">Generate Random Color</button>
+        <div class="color-info" id="color-info" aria-label="Copy color to clipboard" title="Copy color">
+            <span class="color-value" id="color-value">oklch(99% 0.002 240)</span>
+            <svg class="copy-icon" viewBox="0 0 24 24">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Copied to clipboard</div>
+
+    <script>
+        const switchBtn = document.getElementById('switch-btn');
+        const colorInfo = document.getElementById('color-info');
+        const colorValue = document.getElementById('color-value');
+        const toast = document.getElementById('toast');
+
+        // Generate a random OKLch color that is pleasant (not too dark or over-saturated)
+        function generateRandomColor() {
+            // Lightness between 80% and 98% for backgrounds
+            const l = Math.floor(Math.random() * 19) + 80;
+            // Chroma between 0.01 and 0.08 for subtle colors
+            const c = (Math.random() * 0.07 + 0.01).toFixed(3);
+            // Hue between 0 and 360
+            const h = Math.floor(Math.random() * 361);
+            
+            return `oklch(${l}% ${c} ${h})`;
+        }
+
+        function setBackgroundColor(color) {
+            document.documentElement.style.setProperty('--bg', color);
+            colorValue.textContent = color;
+        }
+
+        function showToast() {
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        switchBtn.addEventListener('click', () => {
+            const newColor = generateRandomColor();
+            setBackgroundColor(newColor);
+        });
+
+        colorInfo.addEventListener('click', () => {
+            const color = colorValue.textContent;
+            navigator.clipboard.writeText(color).then(() => {
+                showToast();
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        });
+    </script>
+</body>
+</html>
